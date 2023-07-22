@@ -72,6 +72,22 @@ Final Answer in English:
 SOURCE:
 """
 
+temp_hug_prompt = """Given the following extracted parts of a long document known as context and a question, 
+create a final answer with references to ("SOURCES"), SOURCES should contain following parts "Title: " the title part is enclosed inside [bot-data-title]...[/bot-data-title], 
+and "Link: " use the part Slug which is enclosed inside [bot-data-slug]..[/bot-data-slug] concat it with https://trip101.com/article/Slug.
+If you don't know the answer, just say that you don't know. Don't try to make up an answer and make sure the answers are constructed from the context.
+ALWAYS return a "SOURCES" part in your answer. As per the context weightage lead_para which is enclosed within [bot-data-lead-para]...[/bot-data-lead-para] has high weightage, 
+and we have multiple paras which enclosed with in [bot-data-para]...[/bot-data-para], Each para has enclosed within the tags. 
+Gather information as per the weightage don't miss any para and give the final answer short and crisp, make sure the domain you concat in the Link is always "https://trip101/article/"
+make sure the answer is formatted to the question asked and should not be out of the context provided to you.
+
+{context}
+
+Question: {question}
+Final Answer in English:
+SOURCES:
+"""
+
 # Function to create and store vectors in the FAISS index
 def create_and_store_vectors(articles, embeddings):
     # Get the directory name based on the selected embedding
@@ -137,7 +153,11 @@ def update_and_reload_vectors(article_content, article_id, embeddings, faiss_ind
 # Function to get answers using the selected embedding and FAISS index
 def get_answeres(question, embeddings, faiss_index):
     # Fill the prompt template based on the selected embedding
-    prompt_template = PromptTemplate(template=temp_prompt, input_variables=["context", "question"])
+    embedding_type = type(embeddings).__name__.lower()
+    if embedding_type == "openaiembeddings":
+        prompt_template = PromptTemplate(template=temp_prompt, input_variables=["context", "question"])
+    else:
+        prompt_template = PromptTemplate(template=temp_hug_prompt, input_variables=["context", "question"])
 
     qa_chain = RetrievalQA.from_chain_type(llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0), chain_type="stuff", retriever=faiss_index.as_retriever(), chain_type_kwargs={"prompt": prompt_template}) # this method reloads the index so application fails to run
 
@@ -156,9 +176,59 @@ def preprocess(text):
     # Your implementation to clean and preprocess the text data
     return text
 
+# Function to compute a hash for a given code
+def get_code_hash(code):
+    code_hasher = _CodeHasher()
+    code_hasher.update(code.encode())
+    return code_hasher.hexdigest()
+
+# Check if the app is in 'rerun' mode (user clicked the button)
+def is_rerun():
+    session_state = _get_session_state()
+    current_code_hash = get_code_hash(st.script_runner.code)
+    last_code_hash = session_state.last_code_hash
+
+    if last_code_hash and last_code_hash == current_code_hash:
+        return True
+
+    session_state.last_code_hash = current_code_hash
+    return False
+
 # Streamlit app setup
 st.title("Trippy Bot: Answers your questions with the knowledge of https://trip101.com")
 st.sidebar.header("Settings")
+
+# # Streamlit app main section
+# question = st.text_input("Enter your question:")
+
+# # Button to get answers
+# if st.button("Get Answers"):
+#     if question:
+#         # Call the function to get answers and highlight usage cost messages
+#         answeres = get_answeres(question, embeddings, faiss_index)
+#         if answeres:
+#             st.write("Answer:", answeres)
+#         else:
+#             st.write("Error:", "Something went wrong! Please try after some time.")
+
+#     else:
+#         st.warning("Please enter a question.")
+
+# Get the session state
+def _get_session_state():
+    if not hasattr(st, '_custom_session_state'):
+        st._custom_session_state = {}
+    return st._custom_session_state
+
+
+# Display the history of questions and answers
+st.subheader("Question History")
+session_state = _get_session_state()
+if 'history' in session_state:
+    for entry in session_state['history']:
+        st.write("Question:", entry["question"])
+        st.write("Answer:", entry["answer"])
+        st.write("-" * 50)
 
 # Streamlit app main section
 question = st.text_input("Enter your question:")
@@ -167,11 +237,16 @@ question = st.text_input("Enter your question:")
 if st.button("Get Answers"):
     if question:
         # Call the function to get answers and highlight usage cost messages
-        answeres = get_answeres(question, embeddings, faiss_index)
-        if answeres:
-            st.write("Answer:", answeres)
-        else:
-            st.write("Error:", "Something went wrong! Please try after some time.")
+        answers = get_answeres(question, embeddings, faiss_index)
+        if answers:
+            st.write("Answer:", answers)
 
+            # Store the question and answer in the history
+            session_state = _get_session_state()
+            if 'history' not in session_state:
+                session_state['history'] = []
+            session_state['history'].append({"question": question, "answer": answers})
+        else:
+            st.write("Error:", "Something went wrong! Please try again later.")
     else:
         st.warning("Please enter a question.")
