@@ -3,6 +3,7 @@ import re
 import json
 import dotenv
 import tiktoken
+import logging
 import streamlit as st
 from html import unescape
 from langchain.llms import OpenAI
@@ -17,13 +18,16 @@ from langchain.embeddings import HuggingFaceInstructEmbeddings, HuggingFaceEmbed
 
 dotenv.load_dotenv()
 
+# Initialize the logger
+logging.basicConfig(filename="app_log.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 # Load environment variables (e.g., BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD)
 
 # Initialize different embeddings based on the user's selection
 embedding_options = {
     "Hugging Face": HuggingFaceEmbeddings(),
     "OpenAI": OpenAIEmbeddings(),
-    # "Hugging Face Instruct": HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", model_kwargs={"device": "cpu"})
+    "Hugging Face Instruct": HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", model_kwargs={"device": "cpu"})
 }
 
 # Get the user's selected embedding option using radio buttons
@@ -41,11 +45,11 @@ def load_faiss_index(embeddings):
     embedding_type = type(embeddings).__name__.lower()
     faiss_index_path = f"faiss_index_{embedding_type}"
     # index file path
-    print("Searching faiss: ", faiss_index_path)
+    logging.info("Searching FAISS index: ", faiss_index_path)
 
     global faiss_index
     if faiss_index is not None:
-        print(f"FAISS index already loaded {faiss_index}.")
+        logging.info(f"FAISS index already loaded {faiss_index}.")
         return faiss_index
     else:
         if os.path.exists(faiss_index_path):
@@ -53,7 +57,7 @@ def load_faiss_index(embeddings):
             faiss_index = FAISS.load_local(faiss_index_path, embeddings)
             return faiss_index
         else:
-            print(f"FAISS index directory for {embedding_type} not found.")
+            logging.info(f"FAISS index directory for {embedding_type} not found.")
             return None
     
 # Load the existing FAISS index
@@ -74,7 +78,7 @@ SOURCE:
 
 temp_hug_prompt = """Given the following extracted parts of a long document known as context and a question, 
 create a final answer with references to ("SOURCES"), SOURCES should contain following parts "Title: " the title part is enclosed inside [bot-data-title]...[/bot-data-title], 
-and "Link: " use the part Slug which is enclosed inside [bot-data-slug]..[/bot-data-slug] concat it with https://trip101.com/article/Slug.
+and "Link: " use the part Slug which is enclosed inside [bot-data-slug]..[/bot-data-slug] and replace the Slug part in the following URL https://trip101.com/article/Slug.
 If you don't know the answer, just say that you don't know. Don't try to make up an answer and make sure the answers are constructed from the context.
 ALWAYS return a "SOURCES" part in your answer. As per the context weightage lead_para which is enclosed within [bot-data-lead-para]...[/bot-data-lead-para] has high weightage, 
 and we have multiple paras which enclosed with in [bot-data-para]...[/bot-data-para], Each para has enclosed within the tags. 
@@ -163,11 +167,11 @@ def get_answeres(question, embeddings, faiss_index):
 
     with get_openai_callback() as cb:
         answeres = qa_chain.run(question)
-        print("Answers: ", answeres)
-        print(f"Total Tokens: {cb.total_tokens}")
-        print(f"Prompt Tokens: {cb.prompt_tokens}")
-        print(f"Completion Tokens: {cb.completion_tokens}")
-        print(f"Total Cost (USD): ${cb.total_cost}")
+        logging.info(f"Answers          : {answeres}")
+        logging.info(f"Total Tokens     : {cb.total_tokens}")
+        logging.info(f"Prompt Tokens    : {cb.prompt_tokens}")
+        logging.info(f"Completion Tokens: {cb.completion_tokens}")
+        logging.info(f"Total Cost (USD) : ${cb.total_cost}")
 
     return answeres
 
@@ -194,25 +198,11 @@ def is_rerun():
     session_state.last_code_hash = current_code_hash
     return False
 
+logging.info(f"Streamlit application is being setup...!")
 # Streamlit app setup
 st.title("Trippy Bot: Answers your questions with the knowledge of https://trip101.com")
+logging.info(f"Streamlit application: Header and settings being loaded...!")
 st.sidebar.header("Settings")
-
-# # Streamlit app main section
-# question = st.text_input("Enter your question:")
-
-# # Button to get answers
-# if st.button("Get Answers"):
-#     if question:
-#         # Call the function to get answers and highlight usage cost messages
-#         answeres = get_answeres(question, embeddings, faiss_index)
-#         if answeres:
-#             st.write("Answer:", answeres)
-#         else:
-#             st.write("Error:", "Something went wrong! Please try after some time.")
-
-#     else:
-#         st.warning("Please enter a question.")
 
 # Get the session state
 def _get_session_state():
@@ -250,3 +240,4 @@ if st.button("Get Answers"):
             st.write("Error:", "Something went wrong! Please try again later.")
     else:
         st.warning("Please enter a question.")
+
