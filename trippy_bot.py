@@ -20,6 +20,12 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.embeddings import HuggingFaceInstructEmbeddings, HuggingFaceEmbeddings, OpenAIEmbeddings
+from sentence_transformers import SentenceTransformer, util
+
+# model = SentenceTransformer("hkunlp/instructor-xl")
+# print(model.max_seq_length)
+
+# model.max_seq_length = 256
 
 # Initialize the logger
 logging.basicConfig(filename="app_log.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -27,18 +33,34 @@ logging.basicConfig(filename="app_log.log", level=logging.INFO, format="%(asctim
 faiss_index = None
 
 # Prompt template for Hugging Face Instruct Embeddings
-temp_prompt = """Given the following extracted parts of a long document known as context and a question, 
-create a final answer with references to ("SOURCES"), SOURCES should contain following parts "Title: " the title part is enclosed inside [bot-data-title]...[/bot-data-title], 
+temp1_prompt = """Given the following extracted parts of a long document known as context and a question, 
+create a final answer with references to ("SOURCES"), SOURCES should contain following parts 
+"Title: " the title part is enclosed inside [bot-data-title]...[/bot-data-title], 
 and "Link: " use the part Slug which is enclosed inside [bot-data-slug]..[/bot-data-slug] concat it with https://trip101.com/article/Slug.
-If you don't know the answer, just say that you don't know. Don't try to make up an answer and make sure the answers are constructed from the context.
-ALWAYS return a "SOURCES" part in your answer. As per the context weightage lead_para which is enclosed within [bot-data-lead-para]...[/bot-data-lead-para] has high weightage, 
+If you don't know the answer, just say that you don't know. 
+Don't try to make up an answer and make sure the answers are constructed from the context. ALWAYS return a "SOURCES" part in your answer. 
+As per the context weightage lead_para which is enclosed within [bot-data-lead-para]...[/bot-data-lead-para] has high weightage, 
 and we have multiple paras which enclosed with in [bot-data-para]...[/bot-data-para], Each para has enclosed within the tags. 
-Gather information as per the weightage don't miss any para and give the final answer short and crisp, make sure the domain you concat in the Link is always "https://trip101/article/"
+Gather information as per the weightage don't miss any para and give the final answer short and crisp, 
+make sure the domain you concat in the Link is always "https://trip101/article/"
 make sure the answer is formatted to the question asked and should not be out of the context provided to you.
 
 {context}
 
 Question: {question}
+Final Answer in English:
+SOURCES:
+"""
+
+temp_prompt = """
+Generate an answer to the user's question based on the given context. 
+TOP_RESULTS: {context}
+USER_QUESTION: {question}
+
+Include as much information as possible in the answer. Reference the relevant article title.  
+\"Title: \" the title part is enclosed inside [bot-data-title]...[/bot-data-title], If you didn't find the title from context don't show it.
+\"Link: \" use the part Slug which is enclosed inside [bot-data-slug]..[/bot-data-slug] concat it with https://trip101.com/article/Slug, If you didn't find the slug from context don't show it.
+If you couldn't find the answers with in the context, don't make up the reference if the title is not available in the context.
 Final Answer in English:
 SOURCES:
 """
@@ -51,7 +73,11 @@ def selected_embed_case(embeddings):
     elif embeddings == 2:
         return {"name": "huggingfaceinstructembeddings", "embeddings": HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", model_kwargs={"device": "cpu"})}
     else:
-        return {"name": "huggingfaceembeddings", "embeddings": HuggingFaceEmbeddings()}
+        #return {"name": "huggingfaceembeddings", "embeddings": HuggingFaceEmbeddings()}
+        return {
+            "name": "huggingfaceinstructembeddings", 
+            "embeddings": HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", model_kwargs={"device": "cpu"})
+        }
 
 # Helper function to load FAISS index
 def load_faiss_index(embedding_type):
@@ -76,31 +102,21 @@ def load_faiss_index(embedding_type):
             logging.info(f"FAISS index directory for {embedding_type} not found.")
             return None
 
-def get_conversation_chain(vectorstore, model_temperature=0.5):
-    llm = ChatOpenAI(temperature=model_temperature)
-
-    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=vectorstore.as_retriever(), memory=memory)
-    return conversation_chain
-
-def handle_user_input(user_question):
-    response = st.session_state.conversation({'question': user_question})
-    st.session_state.chat_history = response['chat_history']
-
-    for i, message in enumerate(st.session_state.chat_history):
-        print("Message: ------- : ", message)
-        if i % 2 == 0:
-            st.write("Question:", message.content)
-        else:
-            st.write("Answer:", message.content)
-
-
 # Function to get answers using the selected embedding and FAISS index
 def get_answers(question, embeddings, faiss_index):
     prompt_template = PromptTemplate(template=temp_prompt, input_variables=["context", "question"])
 
-    qa_chain = RetrievalQA.from_chain_type(llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0), chain_type="stuff", retriever=faiss_index.as_retriever(), chain_type_kwargs={"prompt": prompt_template})
+    docs = faiss_index.similarity_search(question)
+    for doc in docs:
+        logging.info(f"The similir document from FAISS index: {doc}\n\n")
 
+    # fill the prompt template
+    chain_type_kwargs = {"prompt": prompt_template}
+    logging.info(f"\n\nThe prompt template made from FAISS index: {chain_type_kwargs}")
+    
+    qa_chain = RetrievalQA.from_chain_type(llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0), 
+                                           chain_type="stuff", retriever=faiss_index.as_retriever(), chain_type_kwargs=chain_type_kwargs)
+    
     with get_openai_callback() as cb:
         answeres = qa_chain.run(question)
         logging.info(f"Answers          : {answeres}")
@@ -111,8 +127,26 @@ def get_answers(question, embeddings, faiss_index):
 
     return answeres
 
-# Function to get the session state
-def get_session_state():
+# Function to compute a hash for a given code
+def get_code_hash(code):
+    code_hasher = _CodeHasher()
+    code_hasher.update(code.encode())
+    return code_hasher.hexdigest()
+
+# Check if the app is in 'rerun' mode (user clicked the button)
+def is_rerun():
+    session_state = _get_session_state()
+    current_code_hash = get_code_hash(st.script_runner.code)
+    last_code_hash = session_state.last_code_hash
+
+    if last_code_hash and last_code_hash == current_code_hash:
+        return True
+
+    session_state.last_code_hash = current_code_hash
+    return False
+
+# Get the session state
+def _get_session_state():
     if not hasattr(st, '_custom_session_state'):
         st._custom_session_state = {}
     return st._custom_session_state
@@ -151,7 +185,7 @@ def main():
 
     # Display the history of questions and answers
     st.subheader("Question History")
-    session_state = get_session_state()
+    session_state = _get_session_state()
     if 'history' in session_state:
         for entry in session_state['history']:
             st.write("Question:", entry["question"])
@@ -170,10 +204,10 @@ def main():
                 st.write("Answer:", answers)
 
                 # Store the question and answer in the history
-                session_state = get_session_state()
+                session_state = _get_session_state()
                 if 'history' not in session_state:
                     session_state['history'] = []
-                    session_state['history'].append({"question": question, "answer": answers})
+                session_state['history'].append({"question": question, "answer": answers})
             else:
                 st.write("Error:", "Something went wrong! Please try again later.")
     else:
