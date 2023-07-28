@@ -33,34 +33,13 @@ logging.basicConfig(filename="app_log.log", level=logging.INFO, format="%(asctim
 faiss_index = None
 
 # Prompt template for Hugging Face Instruct Embeddings
-temp1_prompt = """Given the following extracted parts of a long document known as context and a question, 
-create a final answer with references to ("SOURCES"), SOURCES should contain following parts 
-"Title: " the title part is enclosed inside [bot-data-title]...[/bot-data-title], 
-and "Link: " use the part Slug which is enclosed inside [bot-data-slug]..[/bot-data-slug] concat it with https://trip101.com/article/Slug.
-If you don't know the answer, just say that you don't know. 
-Don't try to make up an answer and make sure the answers are constructed from the context. ALWAYS return a "SOURCES" part in your answer. 
-As per the context weightage lead_para which is enclosed within [bot-data-lead-para]...[/bot-data-lead-para] has high weightage, 
-and we have multiple paras which enclosed with in [bot-data-para]...[/bot-data-para], Each para has enclosed within the tags. 
-Gather information as per the weightage don't miss any para and give the final answer short and crisp, 
-make sure the domain you concat in the Link is always "https://trip101/article/"
-make sure the answer is formatted to the question asked and should not be out of the context provided to you.
-
-{context}
-
-Question: {question}
-Final Answer in English:
-SOURCES:
-"""
-
 temp_prompt = """
 Generate an answer to the user's question based on the given context. 
 TOP_RESULTS: {context}
 USER_QUESTION: {question}
 
-Include as much information as possible in the answer. Reference the relevant article title.  
-\"Title: \" the title part is enclosed inside [bot-data-title]...[/bot-data-title], If you didn't find the title from context don't show it.
-\"Link: \" use the part Slug which is enclosed inside [bot-data-slug]..[/bot-data-slug] concat it with https://trip101.com/article/Slug, If you didn't find the slug from context don't show it.
-If you couldn't find the answers with in the context, don't make up the reference if the title is not available in the context.
+Include as much information as possible in the answer.
+If you didn't find the answer from context, just say you don't know.
 Final Answer in English:
 SOURCES:
 """
@@ -73,11 +52,7 @@ def selected_embed_case(embeddings):
     elif embeddings == 2:
         return {"name": "huggingfaceinstructembeddings", "embeddings": HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", model_kwargs={"device": "cpu"})}
     else:
-        #return {"name": "huggingfaceembeddings", "embeddings": HuggingFaceEmbeddings()}
-        return {
-            "name": "huggingfaceinstructembeddings", 
-            "embeddings": HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", model_kwargs={"device": "cpu"})
-        }
+        return {"name": "huggingfaceembeddings", "embeddings": HuggingFaceEmbeddings()}
 
 # Helper function to load FAISS index
 def load_faiss_index(embedding_type):
@@ -115,10 +90,12 @@ def get_answers(question, embeddings, faiss_index):
     logging.info(f"\n\nThe prompt template made from FAISS index: {chain_type_kwargs}")
     
     qa_chain = RetrievalQA.from_chain_type(llm=ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0), 
-                                           chain_type="stuff", retriever=faiss_index.as_retriever(), chain_type_kwargs=chain_type_kwargs)
-    
+                                           chain_type="stuff", retriever=faiss_index.as_retriever(search_kwargs={'k': 6}), 
+                                           chain_type_kwargs=chain_type_kwargs, return_source_documents=True)
+
     with get_openai_callback() as cb:
-        answeres = qa_chain.run(question)
+        #answeres = qa_chain.run(question)
+        answeres = qa_chain({'query': question})
         logging.info(f"Answers          : {answeres}")
         logging.info(f"Total Tokens     : {cb.total_tokens}")
         logging.info(f"Prompt Tokens    : {cb.prompt_tokens}")
@@ -150,11 +127,40 @@ def _get_session_state():
     if not hasattr(st, '_custom_session_state'):
         st._custom_session_state = {}
     return st._custom_session_state
-            
+
+def parse_response(response):
+    # Extracting the answer from the response
+    answer = response["result"]
+    logging.info(f"Response answer: {answer}")
+
+    # Extracting the URLs from the source_documents
+    source_documents = response["source_documents"]
+    logging.info(f"Response source document: {source_documents}")
+    urls = []
+    slug_set = set()
+    for doc in source_documents:
+        logging.info(f"Response source document in loop: {doc}")
+        metadata = doc.metadata
+        logging.info(f"Response source document - metadata - in loop: {metadata}")
+        slug = metadata['slug']
+        logging.info(f"Response source document - slug - in loop: {slug}")
+        if slug not in slug_set:
+            slug_set.add(slug)
+
+    for slug in slug_set:
+        urls.append(f"https://trip101.com/article/{slug}")
+    # Creating the final result
+    result = {
+        "answer": answer,
+        "sources": urls
+    }
+
+    return result
+
 def main():
     load_dotenv()
 
-    st.set_page_config(page_title="Trippy Bot: Answers your questions with the knowledge of https://trip101.com", page_icon=":bot:")
+    st.set_page_config(page_title="Trippy Bot: Answers your questions with the knowledge of https://trip101.com", page_icon="🤖")
 
     # Initialize different embeddings based on the user's selection
     embedding_options = {
@@ -170,16 +176,10 @@ def main():
 
     faiss_index = load_faiss_index(embeddings)
 
-    # # Create conversation chain
-    # st.session_state.conversation =  get_conversation_chain(faiss_index)
-    # user_question = st.text_input("Enter your question: ")
-
-    # if user_question:
-    #     handle_user_input(user_question)
-
     # Streamlit app setup
     logging.info("Trippy bot application is being loaded...!")
-    st.title("Trippy Bot: Answers your questions with the knowledge of https://trip101.com")
+    st.title("Trippy Bot 🤖: Answers your questions with the knowledge of https://trip101.com")
+
     logging.info("Trippy bot application's settings is being loaded...!")
     st.sidebar.header("Settings")
 
@@ -187,9 +187,17 @@ def main():
     st.subheader("Question History")
     session_state = _get_session_state()
     if 'history' in session_state:
-        for entry in session_state['history']:
-            st.write("Question:", entry["question"])
-            st.write("Answer:", entry["answer"])
+        for answer in session_state['history']:
+            logging.info(f"Answers : ---From--History--- : type: {type(answer)} ques: {answer['answer']['sources']}")
+            markdown = f"""
+                Answer:
+                {answer['answer']['answer']}
+                
+                Source:
+                {answer['answer']['sources']}
+            """
+            st.write("Question:", answer["question"])
+            st.markdown(markdown)
             st.write("-" * 50)
 
     # Streamlit app main section
@@ -199,15 +207,24 @@ def main():
     if st.button("Get Answers"):
         if question:
             # Call the function to get answers and highlight usage cost messages
-            answers = get_answers(question, embeddings, faiss_index)
-            if answers:
-                st.write("Answer:", answers)
+            response = get_answers(question, embeddings, faiss_index)
+            if response:
+                answer = parse_response(response)
+
+                markdown = f"""
+                    Answer:
+                    {answer['answer']}
+                
+                    Source:
+                    {answer['sources']}
+                """
+                st.markdown(markdown)
 
                 # Store the question and answer in the history
                 session_state = _get_session_state()
                 if 'history' not in session_state:
                     session_state['history'] = []
-                session_state['history'].append({"question": question, "answer": answers})
+                session_state['history'].append({"question": question, "answer": answer})
             else:
                 st.write("Error:", "Something went wrong! Please try again later.")
     else:
@@ -215,3 +232,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
