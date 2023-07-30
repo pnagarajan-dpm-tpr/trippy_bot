@@ -1,0 +1,181 @@
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  7.39it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  7.37it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 50.15it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  1.98it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  1.97it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 52.31it/s]
+2023-07-30 04:49:43.944 Uncaught app exception
+Traceback (most recent call last):
+  File "/home/ubuntu/trippy_bot/venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 552, in _run_script
+    exec(code, module.__dict__)
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 237, in <module>
+    main()
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 215, in main
+    answer = parse_response(response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 153, in parse_response
+    if title not in title_set:
+                    ^^^^^^^^^
+NameError: name 'title_set' is not defined
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  3.15it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  3.15it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 50.39it/s]
+2023-07-30 05:42:40.640 Uncaught app exception
+Traceback (most recent call last):
+  File "/home/ubuntu/trippy_bot/venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 552, in _run_script
+    exec(code, module.__dict__)
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 233, in <module>
+    main()
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 211, in main
+    answer = parse_response(response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 149, in parse_response
+    if title not in title_set:
+                    ^^^^^^^^^
+NameError: name 'title_set' is not defined
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  2.05it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  2.05it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 49.98it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  1.89it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  1.89it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 50.63it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  2.04it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  2.04it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 49.14it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  1.91it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  1.91it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 48.86it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 42.27it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 50.42it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 42.15it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 51.19it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 39.22it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 51.58it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 39.17it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 47.80it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 47.20it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 50.31it/s]
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 42.90it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 50.26it/s]
+2023-07-30 06:18:55.549 Uncaught app exception
+Traceback (most recent call last):
+  File "/home/ubuntu/trippy_bot/venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 552, in _run_script
+    exec(code, module.__dict__)
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 224, in <module>
+    main()
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 205, in main
+    answer = parse_response(response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/trippy_bot/trippy_bot.py", line 147, in parse_response
+    urls_set.add(url)
+    ^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'add'
+  Stopping...
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.31.6.224:8501
+
+gio: http://localhost:8501: Operation not supported
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 42.16it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 51.01it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 47.65it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 50.96it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 40.07it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 51.10it/s]

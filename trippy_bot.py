@@ -135,20 +135,19 @@ def parse_response(response):
 
     # Extracting the URLs from the source_documents
     source_documents = response["source_documents"]
-    logging.info(f"Response source document: {source_documents}")
     urls = []
-    slug_set = set()
+    urls_set = set()
     for doc in source_documents:
-        logging.info(f"Response source document in loop: {doc}")
         metadata = doc.metadata
-        logging.info(f"Response source document - metadata - in loop: {metadata}")
         slug = metadata['slug']
-        logging.info(f"Response source document - slug - in loop: {slug}")
-        if slug not in slug_set:
-            slug_set.add(slug)
+        title = metadata['title']
+        url = f"[{title}](https://trip101.com/article/{slug})"
+        logging.info(f"Response source document - metadata - in loop: {metadata}, title - in loop: {title}, slug - in loop: {slug}, url: {url}")
+        if url not in urls_set:
+            urls_set.add(url)
 
-    for slug in slug_set:
-        urls.append(f"https://trip101.com/article/{slug}")
+    urls = sorted(urls_set)
+
     # Creating the final result
     result = {
         "answer": answer,
@@ -163,11 +162,8 @@ def main():
     st.set_page_config(page_title="Trippy Bot: Answers your questions with the knowledge of https://trip101.com", page_icon="🤖")
 
     # Initialize different embeddings based on the user's selection
-    embedding_options = {
-        "Hugging Face": 0,
-        "OpenAI": 1,
-        "Hugging Face Instruct": 2
-    }
+    embedding_options = { "Hugging Face": 0, "OpenAI": 1 }
+    #embedding_options = { "Hugging Face": 0, "OpenAI": 1, "Hugging Face Instruct": 2 }
     
     # Load the existing FAISS index
     selected_embedding = st.sidebar.radio("Select Embedding", list(embedding_options.keys()))
@@ -189,15 +185,12 @@ def main():
     if 'history' in session_state:
         for answer in session_state['history']:
             logging.info(f"Answers : ---From--History--- : type: {type(answer)} ques: {answer['answer']['sources']}")
-            markdown = f"""
-                Answer:
-                {answer['answer']['answer']}
-                
-                Source:
-                {answer['answer']['sources']}
-            """
             st.write("Question:", answer["question"])
-            st.markdown(markdown)
+            st.write("Answer:\n")
+            st.markdown(answer['answer']['answer'])
+
+            st.write("Source:\n")
+            st.markdown("\n".join([f"- {url}" for url in answer['answer']['sources']]))
             st.write("-" * 50)
 
     # Streamlit app main section
@@ -211,14 +204,11 @@ def main():
             if response:
                 answer = parse_response(response)
 
-                markdown = f"""
-                    Answer:
-                    {answer['answer']}
-                
-                    Source:
-                    {answer['sources']}
-                """
-                st.markdown(markdown)
+                st.write("Answer:\n")
+                st.markdown(answer['answer'])
+
+                st.write("Source:\n")
+                st.markdown("\n".join([f"- {url}" for url in answer['sources']]))
 
                 # Store the question and answer in the history
                 session_state = _get_session_state()
